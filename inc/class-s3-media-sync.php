@@ -57,8 +57,26 @@ class S3_Media_Sync {
 		$bucket = $this->get_s3_bucket_url();
 		$path	= str_replace( $source['baseurl'], '', wp_get_attachment_url( $post_id ) );
 
+		$copy_source = $source['basedir'] . $path;
+		$copy_dest   = trailingslashit( $bucket ) . 'wp-content/uploads' . $path;
+
+		// VIP: Brute force de-dupe directories.
+		if ( false !== strpos( $copy_dest, 'wp-content/uploads/wp-content/uploads' ) ) {
+			$copy_dest = str_replace( 'wp-content/uploads/wp-content/uploads', 'wp-content/uploads', $copy_dest );
+			// Log debugging information to IRC.
+			if ( function_exists( 'wpcom_vip_irc' ) ) {
+				wpcom_vip_irc(
+					'#vip-debug-s3-media-sync',
+					'S3 Media Sync Duplicate Directories: ' . wp_json_encode( array( $post_id, $source, $path, $bucket ) ),
+					0,
+					'vip-debug-s3-media-sync',
+					10
+				);
+			}
+		}
+
 		// Copy the attachment over to S3
-		copy( $source['basedir'] . $path, trailingslashit( $bucket ) . 'wp-content/uploads' . $path );
+		copy( $copy_source, $copy_dest );
 	}
 
 	/**
