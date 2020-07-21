@@ -53,12 +53,13 @@ class S3_Media_Sync {
 	 */
 	public function add_attachment_to_s3( $post_id ) {
 		// Grab the source and destination paths
-		$source = wp_get_upload_dir();
-		$bucket = $this->get_s3_bucket_url();
-		$path	= str_replace( $source['baseurl'], '', wp_get_attachment_url( $post_id ) );
+		$source           = wp_get_upload_dir();
+		$bucket           = $this->get_s3_bucket_url();
+		$source_path	  = str_replace( $source['baseurl'], '', wp_get_attachment_url( $post_id ) );
+		$destination_path = wp_parse_url( wp_get_attachment_url( $post_id ) )['path'];
 
-		$copy_source = $source['basedir'] . $path;
-		$copy_dest   = trailingslashit( $bucket ) . 'wp-content/uploads' . $path;
+		$copy_source = $source['basedir'] . $source_path;
+		$copy_dest   = $bucket . $destination_path;
 
 		// VIP: Brute force de-dupe directories.
 		if ( false !== strpos( $copy_dest, 'wp-content/uploads/wp-content/uploads' ) ) {
@@ -67,7 +68,7 @@ class S3_Media_Sync {
 			if ( function_exists( 'wpcom_vip_irc' ) ) {
 				wpcom_vip_irc(
 					'#vip-debug-s3-media-sync',
-					'S3 Media Sync Duplicate Directories: ' . wp_json_encode( array( $post_id, $source, $path, $bucket ) ),
+					'S3 Media Sync Duplicate Directories (v0.2): ' . wp_json_encode( array( $post_id, $source, $source_path, $bucket ) ),
 					0,
 					'vip-debug-s3-media-sync',
 					10
